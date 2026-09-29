@@ -12,6 +12,7 @@ export 'src/annotation/annotation.dart'
         Annotation,
         AnnotationExporter,
         ClipboardAnnotationExporter,
+        ClaudeRoutineExporter,
         BorealisExportButtonReplacement,
         AnnotationBorealisPage;
 // Built-in pages and their public widgets.

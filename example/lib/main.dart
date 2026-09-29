@@ -28,6 +28,14 @@ final _wiretapConfig = WiretapConfig(
   },
 );
 
+// Annotations go to a Claude Code routine when both values are passed with
+// `--dart-define`; otherwise they are logged, so the demo runs without them.
+const _claudeRoutineToken = String.fromEnvironment('CLAUDE_ROUTINE_TOKEN');
+const _claudeRoutineFireUrl = String.fromEnvironment('CLAUDE_ROUTINE_FIRE_URL');
+const AnnotationExporter _annotationExporter = _claudeRoutineToken != '' && _claudeRoutineFireUrl != ''
+    ? ClaudeRoutineExporter(token: _claudeRoutineToken, fireUrl: _claudeRoutineFireUrl)
+    : _LoggingAnnotationExporter();
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -64,7 +72,7 @@ final List<BorealisPage> _pages = [
   const LogsBorealisPage(),
   WiretapBorealisPage(wiretapConfig: _wiretapConfig),
   const RenderingBorealisPage(),
-  const AnnotationBorealisPage(exporter: _LoggingAnnotationExporter()),
+  const AnnotationBorealisPage(exporter: _annotationExporter),
   ActionsBorealisPage(actions: _globalActions),
 ];
 

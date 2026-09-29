@@ -191,7 +191,6 @@ class _AnnotationList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final buttonReplacement = exporter.exportButtonReplacement;
     return Column(
       children: [
         Padding(
@@ -207,11 +206,7 @@ class _AnnotationList extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: FilledButton.icon(
-                  onPressed: () => exportShowStatus(context),
-                  label: Text(buttonReplacement.label),
-                  icon: Icon(buttonReplacement.icon),
-                ),
+                child: _ExportButton(exporter: exporter, annotations: annotations),
               ),
             ],
           ),
@@ -231,11 +226,59 @@ class _AnnotationList extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Export action that shows a spinner while [AnnotationExporter.export] runs
+/// and reports the outcome in a snack bar.
+class _ExportButton extends StatefulWidget {
+  const _ExportButton({required this.exporter, required this.annotations});
+
+  final AnnotationExporter exporter;
+  final List<Annotation> annotations;
+
+  @override
+  State<_ExportButton> createState() => _ExportButtonState();
+}
+
+class _ExportButtonState extends State<_ExportButton> {
+  bool _exporting = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final buttonReplacement = widget.exporter.exportButtonReplacement;
+    return FilledButton.icon(
+      onPressed: _exporting ? null : _exportShowStatus,
+      label: Text(buttonReplacement.label),
+      icon: _exporting
+          ? SizedBox.square(
+              dimension: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+            )
+          : Icon(buttonReplacement.icon),
+    );
+  }
 
   /// Runs the exporter and reports its status message (or failure) in a
   /// snackbar.
-  Future<void> exportShowStatus(BuildContext context) {
-    return runBorealisExport(context, () => exporter.export(annotations));
+  Future<void> _exportShowStatus() async {
+    setState(() => _exporting = true);
+    try {
+      await runBorealisExport(context, () async {
+        final notSentAnnotations = widget.annotations.where((a) => !a.isSent).toList();
+        if (notSentAnnotations.isEmpty) {
+          throw Exception('No annotations to export');
+        }
+
+        final message = await widget.exporter.export(notSentAnnotations);
+        AnnotationStore.instance.markAsSent();
+        return message;
+      });
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
   }
 }
 
@@ -250,69 +293,76 @@ class _AnnotationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return IntrinsicHeight(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '#${annotationIndex + 1}',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          color: Theme.of(context).colorScheme.primary,
+    return Opacity(
+      opacity: annotation.isSent ? 0.6 : 1.0,
+      child: IntrinsicHeight(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '#${annotationIndex + 1}',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          annotation.note,
-                          style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w400),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            annotation.note,
+                            style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w400),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    annotation.widgetType,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ],
                     ),
-                  ),
-                  if (annotation.sourceLocation != null) ...[
+                    const SizedBox(height: 6),
                     Text(
-                      annotation.sourceLocation!,
+                      annotation.widgetType,
                       style: theme.textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w400,
+                        fontWeight: FontWeight.w800,
                         color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                     ),
+                    if (annotation.sourceLocation != null) ...[
+                      Text(
+                        annotation.sourceLocation!,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w400,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  iconSize: 20,
-                  visualDensity: VisualDensity.compact,
-                  tooltip: 'Delete annotation',
-                  onPressed: () => _confirmDelete(context),
                 ),
+              ),
+              if (annotation.isSent) ...[
+                Text(
+                  'Sent',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.primaryContainer,
+                  ),
+                ),
+                SizedBox(width: 12),
               ],
-            ),
-          ],
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                iconSize: 20,
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Delete annotation',
+                onPressed: () => _confirmDelete(context),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -28,6 +28,7 @@ class Annotation {
     this.widgetOrdinal = 1,
     this.widgetOrdinalCount = 1,
     Element? element,
+    this.isSent = false,
     this.id = '',
   }) : props = Map.unmodifiable(props),
        _element = element == null ? null : WeakReference(element);
@@ -84,6 +85,8 @@ class Annotation {
   /// exported. Stored as an unmodifiable copy and compared by content.
   final Map<String, String> props;
 
+  final bool isSent;
+
   /// Live handle to the targeted widget's element. Lets the overlay re-resolve
   /// the widget's current on-screen bounds and tell whether it is still
   /// visible. Goes stale when the screen is disposed (navigated away); the
@@ -132,7 +135,7 @@ class Annotation {
 
   /// A copy with a new [note] and/or re-bound [element]; everything else is
   /// preserved. Used when an annotation is edited or re-attached.
-  Annotation copyWith({String? id, String? note, Element? element}) => Annotation(
+  Annotation copyWith({String? id, String? note, Element? element, bool? isSent}) => Annotation(
     id: id ?? this.id,
     note: note ?? this.note,
     widgetType: widgetType,
@@ -146,6 +149,7 @@ class Annotation {
     widgetOrdinal: widgetOrdinal,
     widgetOrdinalCount: widgetOrdinalCount,
     element: element ?? this.element,
+    isSent: isSent ?? this.isSent,
   );
 
   /// Minimal payload for clipboard export: note, widget type, the instance

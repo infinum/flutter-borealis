@@ -100,4 +100,13 @@ class AnnotationStore extends ChangeNotifier {
     active.dispose();
     super.dispose();
   }
+
+  void markAsSent() {
+    for (final annotation in _annotations) {
+      if (!annotation.isSent) {
+        _annotations[_annotations.indexOf(annotation)] = annotation.copyWith(isSent: true);
+      }
+    }
+    notifyListeners();
+  }
 }

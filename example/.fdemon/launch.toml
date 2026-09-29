@@ -1,0 +1,6 @@
+# Flutter Demon Launch Configurations
+# Auto-generated - manual edits will be preserved
+
+[[configurations]]
+name = "Default"
+device = "auto"

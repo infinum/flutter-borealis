@@ -50,3 +50,56 @@ class ClipboardAnnotationExporter extends AnnotationExporter {
     return 'Copied ${annotations.length} annotations';
   }
 }
+
+/// Exporter that fires a Claude Code routine, sending the annotation JSON as an
+/// extra turn appended to the routine's session.
+///
+/// [token] is a Claude Code OAuth token (used as a bearer token); [fireUrl] is
+/// the routine's fire endpoint, e.g.
+/// `https://api.anthropic.com/v1/claude_code/routines/<trigger-id>/fire`.
+class ClaudeRoutineExporter extends AnnotationExporter {
+  const ClaudeRoutineExporter({
+    required this.token,
+    required this.fireUrl,
+  });
+
+  final String token;
+  final String fireUrl;
+
+  @override
+  BorealisExportButtonReplacement get exportButtonReplacement => const BorealisExportButtonReplacement(
+        icon: Icons.send,
+        label: 'Send to claude',
+      );
+
+  @override
+  Future<String> export(List<Annotation> annotations) async {
+    final json = jsonEncode(annotations.map((a) => a.toExportJson()).toList());
+
+    final client = Dio();
+    try {
+      await client.post<void>(
+        fireUrl,
+        data: {'text': json},
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'anthropic-version': '2023-06-01',
+            'anthropic-beta': 'experimental-cc-routine-2026-04-01',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      throw Exception(
+        'Failed to send annotations to Claude'
+        '${status != null ? ' (HTTP $status)' : ''}: ${e.message}',
+      );
+    } finally {
+      client.close();
+    }
+
+    return 'Sent ${annotations.length} annotations';
+  }
+}
