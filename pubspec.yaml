@@ -1,0 +1,65 @@
+name: borealis
+description: In-app debugging overlay for Flutter — network inspector, logs, device info, accessibility and annotation tools in a floating panel.
+version: 2.0.0
+homepage: https://github.com/infinum/flutter-borealis
+repository: https://github.com/infinum/flutter-borealis
+issue_tracker: https://github.com/infinum/flutter-borealis/issues
+
+topics:
+  - debugging
+  - devtools
+  - network
+  - logging
+  - overlay
+
+platforms:
+  android:
+  ios:
+
+screenshots:
+  - description: "The floating debug button over a running app."
+    path: screenshots/panel_button.png
+  - description: "The Network tab listing captured requests with status and timings."
+    path: screenshots/network_list.png
+  - description: "A captured request's headers and pretty-printed body."
+    path: screenshots/network_detail.png
+  - description: "Annotation capture: a selected widget and its inspector card."
+    path: screenshots/annotations.png
+
+# The floor is what device_info_plus 13.x and package_info_plus 10.x require,
+# which is also what the lockfile resolves and what CI builds. It was declared
+# lower (Dart 3.7 / Flutter 3.29) while nothing ever compiled against that, so
+# the claim was never true in any way a user could rely on.
+environment:
+  sdk: ^3.10.0
+  flutter: ">=3.38.1"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Ranges stay wide in both directions: Borealis is a debug dependency and
+  # should never be the package that forces an app to upgrade something else,
+  # nor the one that pins it to an older version. The lower bounds therefore
+  # still reach below the SDK floor above — an app that already holds
+  # device_info_plus 12.x can keep it, and that combination resolves fine on a
+  # newer Flutter. Only the newest resolvable set is built in CI.
+  #
+  # dio floor is 5.2.0, where DioException replaced DioError. flutter_loggy_dio
+  # declares ^5.0.0 but uses DioException too, so this floor covers it as well.
+  collection: ^1.18.0
+  dio: ">=5.2.0 <6.0.0"
+  device_info_plus: ">=12.0.0 <14.0.0"
+  package_info_plus: ">=8.0.0 <11.0.0"
+
+  # Ours
+  loggy: ^2.0.3
+  flutter_loggy_dio: ^3.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

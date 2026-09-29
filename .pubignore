@@ -1,0 +1,27 @@
+# NOTE: a .pubignore replaces the .gitignore in its own directory, so the
+# entries the root .gitignore contributed to the published archive are
+# repeated here. example/.gitignore still applies (there is no
+# example/.pubignore), so example/build/ stays excluded.
+
+# README-only artwork, served from GitHub — no reason to ship it to pub.dev.
+assets/
+
+# Platform scaffolding for the example app. `flutter create` regenerates it,
+# and pub.dev only renders example/lib and example/README.md.
+example/android/
+example/ios/
+example/pubspec.lock
+
+# Carried over from .gitignore, because a .pubignore replaces it. pub drops
+# hidden files and pubspec.lock on its own, so those need no entry here.
+build/
+*.iml
+*.ipr
+*.iws
+*.class
+*.log
+*.pyc
+*.swp
+**/doc/api/
+
+coverage/
